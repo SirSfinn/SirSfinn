@@ -8,14 +8,13 @@ Last revision: 2018-10-14 (BM)
 //Shawn Finnigan
 //Team Sonny
 //Find the Gold Mod
-//Mod 1: Changed grid size to 6x6 & removed bead border
-//Mod 2: Changed bead color by default and upon click
+//Mod 1: Changed grid size to 6x6 & removed bead border.
+//Mod 2: Changed bead color by default and upon click. Added fader. 
 //Mod 3: Added randomized "gold" placement
 //Mod 4: Added "X" glyph upon clicking "non-gold" bead
 //Mod 5: Added unique "metal detector" fx upon hovering over both "gold" and "non-gold" beads
 //Mod 6: Added gold/miss counter via status text changes
-//Mod 7: Added a score formula that is calculated upon victory.
-//Mod 8: Added a unique effect that plays once victory has been achieved 
+//Mod 7: Added a score & winscreen that is calculated and shared upon victory. 
 
 "use strict"; // do not remove this directive!
 
@@ -32,6 +31,7 @@ Any value returned is ignored.
 //counter variables used to track gold found and number of times a non-gold bead is clicked
 
 var score = {goldCounter : 0, missCounter : 0};
+var scoreCalculated = 0 //Variable that prevents the fx from replaying when clicking reset once game is over.
 
 PS.init = function( system, options ) {
 
@@ -53,13 +53,21 @@ PS.init = function( system, options ) {
 	
 	// Turns bead border brown, effectively removing it
 	
-	PS.border( PS.ALL, PS.ALL, 0)
+	PS.border( PS.ALL, PS.ALL, 0);
 	
 	// Set all beads to starting color of brown
 	
-    PS.color(PS.ALL, PS.ALL, [94, 49, 0]);
+	PS.color(PS.ALL, PS.ALL, [94, 49, 0]);
 	
-	// Change status line color and text
+	//Causes all beads to fade into a new color at a rate of 30 ticks 
+	
+	PS.fade(PS.ALL, PS.ALL, 30);
+	
+	//Enables black drop-shadow behind grid
+	
+	PS.gridShadow (true, PS.COLOR_BLACK);
+	
+    // Change status line color and text
 
 	PS.statusColor( PS.COLOR_BLACK );
 	PS.statusText( "You have a metal detector. Find the gold!" );
@@ -123,10 +131,12 @@ PS.touch = function( x, y, data, options ) {
 	
 	//If the gold counter reaches 3, change all beads to green, add a $ glyph to them, and update the statusText.
 	
-	if (score.goldCounter == 3) {
+	if (score.goldCounter == 3 && scoreCalculated == 0) {
+		PS.audioPlay("fx_tada")
 		PS.color(PS.ALL, PS.ALL, PS.COLOR_GREEN)
 		PS.glyph(PS.ALL, PS.ALL, "$")
-		PS.statusText( "You're rich! Score:" + (((score.goldCounter) * 5) - score.missCounter) + "/15. Refresh to restart.")
+		PS.statusText( "You're rich! Score:" + (((score.goldCounter) * 5) - score.missCounter) + "/15. Refresh to restart.");
+	    (scoreCalculated + 1);
 	}
 
 	// NOTE: The above statement could be expressed more succinctly using JavaScript's ternary operator:
@@ -186,11 +196,12 @@ PS.enter = function( x, y, data, options ) {
 
 	//Causes detector blips upon entering a new bead
 	
-	PS.audioPlay( "fx_blip" );
+	if (score.goldCounter < 3){
+	PS.audioPlay( "fx_blip" )};
 	
 	//If the color "beneath" a bead is yellow, then a unique sound effect will play.
 	
-	if (data == PS.COLOR_YELLOW ) {
+	if (data == PS.COLOR_YELLOW && score.goldCounter < 3) {
 	PS.audioPlay( "fx_coin2") ;
 	}
 	// Add code here for when the mouse cursor/touch enters a bead.
