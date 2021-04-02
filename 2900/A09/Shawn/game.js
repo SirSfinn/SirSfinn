@@ -30,55 +30,81 @@ Any value returned is ignored.
 
 //counter variables used to track gold found and number of times a non-gold bead is clicked
 
-var score = {goldCounter : 0, missCounter : 0};
-var scoreCalculated = 0 //Variable that prevents the fx from replaying when clicking reset once game is over.
+let score = {
+	goldCounter : 0,
+	missCounter : 0
+};
 
-PS.init = function( system, options ) {
+let scoreCalculated = 0 // Variable that prevents the fx from replaying when clicking reset once game is over.
 
-    // Establish grid dimensions
-	
-	PS.gridSize( 6, 6 );
-	
-	// Randomizes the PS.data of three beads, guaranteeing that pieces of gold will spawn. 
-    // Note: I haven't run into a single iteration of two beads spawning in the same place.
-    // Can that happen using this method?	
-	
-	PS.data(PS.random(5), PS.random(0), PS.COLOR_YELLOW)
-	PS.data(PS.random(0), PS.random(5), PS.COLOR_YELLOW)
-	PS.data(PS.random(5), PS.random(5), PS.COLOR_YELLOW)
-	
-	// Set background color to Perlenspiel logo gray
-	
+let won = false; // flag to indicate win
+
+// Isolate code that restarts game
+
+const GRID_SIZE = 6; // make this a constant in case you change your mind
+
+const initGame = function () {
+	PS.data( PS.ALL, PS.ALL, 0 ); // reset all bead data
+
+	let x = PS.random( GRID_SIZE ) - 1;
+	let y = PS.random( GRID_SIZE ) - 1;
+	PS.data( x, y, PS.COLOR_YELLOW );
+
+	// Make sure second gold is AT LEAST in a different column
+
+	let val;
+	do {
+		val = PS.random( GRID_SIZE ) - 1;
+	} while ( val === x );
+	PS.data( val, PS.random( GRID_SIZE ) - 1, PS.COLOR_YELLOW );
+
+	// Make sure third gold is AT LEAST in a different row
+
+	do {
+		val = PS.random( GRID_SIZE ) - 1;
+	} while ( val === y );
+	PS.data( PS.random( GRID_SIZE ) - 1, val, PS.COLOR_YELLOW );
+
 	PS.gridColor( PS.COLOR_GRAY );
-	
-	// Turns bead border brown, effectively removing it
-	
-	PS.border( PS.ALL, PS.ALL, 0);
-	
+
 	// Set all beads to starting color of brown
-	
+
 	PS.color(PS.ALL, PS.ALL, [94, 49, 0]);
-	
-	//Causes all beads to fade into a new color at a rate of 30 ticks 
-	
-	PS.fade(PS.ALL, PS.ALL, 30);
-	
-	//Enables black drop-shadow behind grid
-	
-	PS.gridShadow (true, PS.COLOR_BLACK);
-	
-    // Change status line color and text
+	PS.glyph(PS.ALL, PS.ALL, 0); // clear all glyphs
+
+	// Change status line color and text
 
 	PS.statusColor( PS.COLOR_BLACK );
 	PS.statusText( "You have a metal detector. Find the gold!" );
+
+	won = false;
+	score.goldCounter = 0; // reset level score
+};
+
+PS.init = function( system, options ) {
+	// Run one-time initialization
+
+    // Establish grid dimensions
 	
+	PS.gridSize( GRID_SIZE, GRID_SIZE );
+
 	// Preload detector beeps/blips and click sound
 
 	PS.audioLoad( "fx_blip" );
 	PS.audioLoad( "fx_click" );
 	PS.audioLoad( "fx_coin2" );
 
+	PS.border( PS.ALL, PS.ALL, 0);
 	
+	//Causes all beads to fade into a new color at a rate of 30 ticks
+	
+	PS.fade(PS.ALL, PS.ALL, 30);
+	
+	//Enables black drop-shadow behind grid
+	
+	PS.gridShadow (true, PS.COLOR_BLACK);
+
+	initGame(); // call initializer
 };
 
 /*
@@ -92,59 +118,49 @@ This function doesn't have to do anything. Any value returned is ignored.
 */
 
 PS.touch = function( x, y, data, options ) {
-	// Toggle color of touched bead from white to black and back again
-	// NOTE: The default value of a bead's [data] is 0, which happens to be equal to PS.COLOR_BLACK
-
-	//PS.color( x, y, data); // set color to current value of data
-	
-	
-	// Decide what the next color should be.
-	// If the current value was black, change it to white.
-	// Otherwise change it to black.
-
-	 let next; // variable to save next color
-
-	PS.data( x, y, next );
-	 
-	
-	//If the color "beneath" a bead is black, then add a black X on that bead, a +1 to the missCounter, and change the statusText message.
-	
-	if (data == PS.COLOR_BLACK ) {
-	score.missCounter ++;
-	PS.glyph( x, y, "X")
-	PS.statusText( "Misses:" + score.missCounter )
+	PS.audioPlay( "fx_click" );
+	if ( won ) {
+		if ( scoreCalculated < 5 ) {
+			initGame();
+		}
+		return;
 	}
-	
+
+	// If bead data is 0, add a black X on that bead, a +1 to the missCounter, and change the statusText message.
+
+	if ( !data ) {
+		score.missCounter += 1;
+		PS.glyph( x, y, "X" );
+		PS.audioPlay( "fx_squawk" ); // a random sound I picked
+		PS.statusText( "Misses: " + score.missCounter );
+	}
+
 	//If the color is yellow (gold), send a statusText message and don't update the goldCounter.
-	
-	else { if (PS.color (x,y) == PS.COLOR_YELLOW) {
-	PS.statusText( "Nice try, you already found that gold.")}
-	
+
+	else if ( PS.color( x, y ) === PS.COLOR_YELLOW ) {
+		PS.audioPlay( "fx_squawk" ); // a random sound I picked
+		PS.statusText( "Nice try. You already found that gold." );
+	}
+
 	// If the color "beneath" the bead is yellow, then add one to the gold counter, change the bead to yellow, and update the statusText.
-	
+
 	else {
-		score.goldCounter++;
-		PS.color(x, y, PS.COLOR_YELLOW)
-	    PS.statusText( "Gold:" + score.goldCounter + "/3")
+		score.goldCounter += 1;
+		PS.color( x, y, PS.COLOR_YELLOW );
+		if ( score.goldCounter === 3 ) {
+			won = true;
+			PS.audioPlay( "fx_tada" );
+			PS.color(PS.ALL, PS.ALL, PS.COLOR_GREEN);
+			PS.glyph(PS.ALL, PS.ALL, "$");
+			PS.statusText ( "You're rich! Click to play again!")
+			//PS.statusText( "You're rich! Score: " + (((score.goldCounter) * 5) - score.missCounter) + "/15. Click to restart.");
+			scoreCalculated += 1;
+		}
+		else {
+			PS.audioPlay( "fx_coin1" ); // a random sound I picked
+			PS.statusText( "Gold: " + score.goldCounter + "/3" );
 		}
 	}
-	
-	//If the gold counter reaches 3, change all beads to green, add a $ glyph to them, and update the statusText.
-	
-	if (score.goldCounter == 3 && scoreCalculated == 0) {
-		PS.audioPlay("fx_tada")
-		PS.color(PS.ALL, PS.ALL, PS.COLOR_GREEN)
-		PS.glyph(PS.ALL, PS.ALL, "$")
-		PS.statusText( "You're rich! Score:" + (((score.goldCounter) * 5) - score.missCounter) + "/15. Refresh to restart.");
-	    (scoreCalculated + 1);
-	}
-
-	// NOTE: The above statement could be expressed more succinctly using JavaScript's ternary operator:
-	// let next = ( data === PS.COLOR_BLACK ) ? PS.COLOR_WHITE : PS.COLOR_BLACK;	
-
-	// Play click sound.
-
-	PS.audioPlay( "fx_click" );
 };
 
 /*
