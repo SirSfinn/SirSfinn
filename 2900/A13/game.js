@@ -152,6 +152,17 @@ PS.init = function( system, options ) {
 	// PS.statusText( "Game" );
 
 	// Add any other initialization code you need here.
+	
+	const TEAM = "TeamSonny"; // should be alphabetic ONLY
+	
+PS.dbLogin( "imgd2900", TEAM, function ( id, user ) {
+      if ( user === PS.ERROR ) {
+           return;
+      }
+      PS.dbEvent( TEAM, "startup", user );
+      PS.dbSend( TEAM, PS.CURRENT, { discard : true } );
+ }, { active : true } );
+ 
 };
 
 
