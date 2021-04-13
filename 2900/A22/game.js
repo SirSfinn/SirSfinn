@@ -125,7 +125,7 @@ PS.init = function( system, options ) {
 	}
 
 	randomizeGlyphs();
-	const TEAM = "TeamSonny";
+	const TEAM = "sonny";
 
 	PS.statusText("Order the numbers at the top.");
 
