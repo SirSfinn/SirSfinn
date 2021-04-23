@@ -1,6 +1,8 @@
 /*
 game.js for Perlenspiel 3.3.xd
-Last revision: 2021-04-08 (BM)
+Last revision: 2021-04-22 (SF)
+Shawn Finnigan
+Team Sonny
 
 Perlenspiel is a scheme by Professor Moriarty (bmoriarty@wpi.edu).
 This version of Perlenspiel (3.3.x) is hosted at <https://ps3.perlenspiel.net>
@@ -53,8 +55,9 @@ const GRID_WIDTH = 6;
 const GRID_HEIGHT = 6;
 const PASTEL_GREEN = [153, 255, 153];
 var BEAD_COLOR = ([])
+var SHADOW_COLOR = ([])
 let won = false; //Flag to indicate win
-let k = 0
+let k = 0 //Counter variable used to detect number of loops
 
 // This array stores the glyphs in rows/columns that resemble the grid.
 // They can be stored as Unicode strings (as shown) or as numbers.
@@ -73,7 +76,7 @@ const GLYPHS = [
 
 let empty_x, empty_y;
 
-var randomColor = function () {
+var randomColor = function () { //Function to assign random colors to variables r, g, and b
 	var r = 0;
 	var g = 0;
 	var b = 0;
@@ -83,6 +86,19 @@ var randomColor = function () {
 	b = PS.random(128) + 127;
 
 	BEAD_COLOR = ([r, g, b]);
+
+}
+
+var randomColor2 = function () { //Function to assign random colors to variables r, g, and b
+	var r2 = 0;
+	var g2 = 0;
+	var b2 = 0;
+
+	r2 = PS.random(128) + 127;
+	g2 = PS.random(128) + 127;
+	b2 = PS.random(128) + 127;
+
+	SHADOW_COLOR = ([r2, g2, b2]);
 
 }
 
@@ -117,7 +133,7 @@ var randomizeEmpty = function() {  //Function to randomize the placement of the 
 	}
 }
 
-var initGame = function() {
+var initGame = function() { //Function to reset board fully randomized once more
 	k = 0;
 	won = false;
 	PS.active(PS.ALL, PS.ALL, true);
@@ -126,6 +142,8 @@ var initGame = function() {
 	PS.statusText("Use the arrow keys to order beads at the top.");
 	PS.glyph(PS.ALL, PS.ALL, 0);
 	PS.borderColor(PS.ALL, PS.ALL, PS.COLOR_GRAY);
+	randomColor2();
+	PS.gridShadow(true, SHADOW_COLOR);
 	randomizeGlyphs();
 }
 
@@ -133,12 +151,14 @@ var initGame = function() {
 
 PS.init = function( system, options ) {
     randomColor();
+    randomColor2();
 	//PS.bgAlpha( PS.ALL, PS.ALL, PS.ALPHA_OPAQUE);
 	//PS.bgColor(PS.ALL, PS.ALL, BEAD_COLOR);
     PS.gridSize( GRID_WIDTH, GRID_HEIGHT );
 	PS.gridColor ( PS.COLOR_GRAY );
 	PS.color( PS.ALL, PS.ALL, BEAD_COLOR); // Sets all beads to pastel green
 	PS.fade (PS.ALL, PS.ALL, 15);
+	PS.gridShadow(true, SHADOW_COLOR);
 
 	// Initialize location of empty bead
 
@@ -260,10 +280,6 @@ This function doesn't have to do anything. Any value returned is ignored.
 
 PS.release = function( x, y, data, options ) {
 
-//if (won == true) {
-	//PS.audioPlay("fx_click");
-	//initGame();
-
 
 };
 
@@ -340,6 +356,8 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 		initGame();
 	}
 
+	//Code that moves the empty space in the direction of a selected arrow key
+
 	if ((key == 1006) && (empty_y >= 0)) {  //If key up is chosen
 	if(empty_y == 0) {
 		return;
@@ -369,7 +387,7 @@ if ((key == 1005) && (empty_y >= 0)) {  //If key left is chosen
 	else (swap((empty_x - 1), empty_y));
 }
 
-	if ((PS.glyph(0, 0) == 9461) && (PS.glyph(1, 0) == 9462) && (PS.glyph(2, 0) == 9463) && (PS.glyph(3, 0) == 9464) && (PS.glyph(4, 0) == 9465) && (PS.glyph(5, 0) == 9466)) {
+	if ((PS.glyph(0, 0) == 9461) && (PS.glyph(1, 0) == 9462) && (PS.glyph(2, 0) == 9463) && (PS.glyph(3, 0) == 9464) && (PS.glyph(4, 0) == 9465) && (PS.glyph(5, 0) == 9466)) { //Checks if win condition has been met
 		PS.audioPlay("fx_tada");
 		PS.borderColor(PS.ALL, PS.ALL, PASTEL_GREEN);
 		PS.statusText("Puzzle Completed! Press a button to restart!");
